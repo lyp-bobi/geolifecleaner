@@ -1,0 +1,84 @@
+# GeoLife & T-Drive Trajectory Cleaner — full-featured config
+# All processing steps are enabled. Adjust thresholds to fit your data.
+
+# ── 1. Dataset ──────────────────────────────────────────────────────────────
+datasets:
+  enabled:
+    - geolife
+    # - tdrive
+
+input:
+  geolife:
+    path: "data/Geolife Trajectories 1.3"
+    include_labels: true
+    user_ids: null          # null = all; example: ["001", "005"]
+    bbox: null              # [min_lon, min_lat, max_lon, max_lat]
+    date_range: null        # ["2008-01-01", "2012-12-31"]
+  tdrive:
+    path: "data/T-drive Taxi Trajectories"
+    user_ids: null
+    bbox: null
+    date_range: null
+
+# ── 2. Processing ────────────────────────────────────────────────────────────
+processing:
+  drop_invalid_coords: true
+  remove_duplicates: true
+
+  outlier_edge:
+    enabled: true
+    max_distance_m: 5000
+
+  max_speed:
+    enabled: true
+    threshold_ms: 83.3      # 300 km/h ≈ 83.3 m/s
+
+  neighborhood_filter:
+    enabled: true
+    window_points: 10
+    window_seconds: 600
+    threshold_ratio: 0.6
+
+  cut_gap:
+    enabled: true
+    threshold_s: 1800
+
+  cut_stay:
+    enabled: true
+    time_threshold_s: 1800
+    spatial_threshold_m: 50
+
+  replicas: 3
+
+  time_shift:
+    enabled: true
+    range_start: "2020-01-01 00:00:00"
+    range_end:   "2020-01-07 23:59:59"
+    seed: null
+
+  spatial_rotation:
+    enabled: true
+    distribution: uniform
+    std_deg: 30
+    range_deg: 180
+    per_segment: true
+    seed: null
+
+  spatial_displacement:
+    enabled: true
+    distribution: normal
+    std_deg: 0.5
+    range_deg: 1.0
+    per_segment: true
+    seed: null
+
+# ── 3. Output ────────────────────────────────────────────────────────────────
+output:
+  directory: output
+  merge: true
+  geolife_prefix: geolife
+  tdrive_prefix: tdrive
+  format: postgis             # wkt | postgis | geojson
+  time_dimension: m           # z | m  (wkt and postgis only)
+  time_unit: seconds          # seconds | hours
+  postgis_table: traj_table

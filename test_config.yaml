@@ -1,0 +1,59 @@
+datasets:
+  enabled:
+    - tdrive
+
+input:
+  geolife:
+    path: "data/Geolife Trajectories 1.3"
+    include_labels: true
+    user_ids: null
+    bbox: null
+    date_range: null
+  tdrive:
+    path: "data/T-drive Taxi Trajectories"
+    user_ids: [1, 2, 3]
+    bbox: null
+    date_range: null
+
+processing:
+  drop_invalid_coords: true
+  remove_duplicates: true
+
+  outlier_edge:
+    enabled: true
+    max_distance_m: 5000
+
+  max_speed:
+    enabled: true
+    threshold_ms: 83.3
+
+  neighborhood_filter:
+    enabled: true
+    window_points: 10
+    window_seconds: 600
+    threshold_ratio: 0.6
+
+  cut_gap:
+    enabled: true
+    threshold_s: 1800
+
+  cut_stay:
+    enabled: true
+    time_threshold_s: 300
+    spatial_threshold_m: 50
+
+  time_shift:
+    enabled: true
+    range_start: "2020-01-01 00:00:00"
+    range_end:   "2020-12-31 23:59:59"
+    seed: 42
+
+output:
+  directory: output/test
+  merge: false
+  geolife_prefix: geolife
+  tdrive_prefix: tdrive
+  format: postgis
+  time_dimension: m
+  time_unit: seconds
+  postgis_table: traj_table
