@@ -92,25 +92,26 @@ def run_geolife(cfg: dict):
         fmt=out_cfg["format"],
         prefix=prefix,
         merge=out_cfg.get("merge", True),
-        id_col="user_id",
+        id_col="traj_id",
         ts_col="timestamp",
         lat_col="latitude",
         lon_col="longitude",
         out_cfg=out_cfg,
     ) as sw:
-        # Outer loop over users so each user is read from disk only once,
-        # even when replicas > 1.
+        # Outer loop over users (one disk pass per user), inner loop over
+        # individual PLT trajectories within each user.
         for uid, df in iter_geolife(path, user_ids=user_ids, include_labels=include_labels):
-            for i in range(replicas):
-                run_cfg_i = _offset_seeds(run_cfg, i) if replicas > 1 else run_cfg
-                key = f"{uid}_r{i}" if replicas > 1 else uid
-                result_df = process(df, id_col="user_id", cfg=run_cfg_i,
-                                    lat_col="latitude", lon_col="longitude")
-                if replicas > 1:
-                    result_df = result_df.copy()
-                    result_df["user_id"] = key
-                n = sw.write_user(key, result_df)
-                print(f"  [{key}] {n} segments")
+            for traj_id, traj_df in df.groupby("traj_id", sort=True):
+                for i in range(replicas):
+                    run_cfg_i = _offset_seeds(run_cfg, i) if replicas > 1 else run_cfg
+                    key = f"{traj_id}_r{i}" if replicas > 1 else traj_id
+                    result_df = process(traj_df, id_col="traj_id", cfg=run_cfg_i,
+                                        lat_col="latitude", lon_col="longitude")
+                    if replicas > 1:
+                        result_df = result_df.copy()
+                        result_df["traj_id"] = key
+                    n = sw.write_user(key, result_df)
+                    print(f"  [{key}] {n} segments")
 
     print(f"[GeoLife] Done. Total segments: {sw.total_segments}")
 

@@ -64,7 +64,7 @@ processing:
   #     getting independently drawn random values (rotation, displacement,
   #     time_shift).  When replicas > 1, IDs are suffixed _r0, _r1, ...
   #     If a step's seed is set, replica i uses seed+i for reproducibility.
-  replicas: 3
+  replicas: 1
 
   # 2.7 Timestamp shifting: each trajectory segment is shifted so that its
   #     midpoint (mean of first and last timestamp) falls at a uniformly

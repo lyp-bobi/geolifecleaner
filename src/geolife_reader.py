@@ -116,7 +116,10 @@ def _iter_zip(zip_path: Path, user_ids: list | None, include_labels: bool):
             dfs = []
             for name in sorted(plt_names):
                 with zf.open(name) as f:
-                    dfs.append(_parse_plt(TextIOWrapper(f, encoding="utf-8"), uid))
+                    plt_df = _parse_plt(TextIOWrapper(f, encoding="utf-8"), uid)
+                    stem = Path(name).stem
+                    plt_df["traj_id"] = f"{uid}_{stem}"
+                    dfs.append(plt_df)
             if not dfs:
                 continue
             user_df = pd.concat(dfs, ignore_index=True)
@@ -160,11 +163,15 @@ def _iter_dir(base: Path, user_ids: list | None, include_labels: bool):
         if len(plt_files) > 8:
             with ThreadPoolExecutor() as pool:
                 futures = {pool.submit(_read_plt_file, p, uid): p for p in plt_files}
-                dfs = [f.result() for f in as_completed(futures)]
+                dfs = [(f.result(), futures[f]) for f in as_completed(futures)]
+            dfs = [(df, p) for df, p in dfs]
         else:
-            dfs = [_read_plt_file(p, uid) for p in plt_files]
+            dfs = [(_read_plt_file(p, uid), p) for p in plt_files]
 
-        user_df = pd.concat(dfs, ignore_index=True)
+        for df, p in dfs:
+            df["traj_id"] = f"{uid}_{p.stem}"
+
+        user_df = pd.concat([df for df, _ in dfs], ignore_index=True)
         if include_labels and not labels.empty:
             user_df = _attach_labels(user_df, labels)
         else:
